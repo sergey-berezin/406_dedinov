@@ -31,6 +31,11 @@ namespace UserGUI
         public MainWindow()
         {
             InitializeComponent();
+            using (var db = new ImageResultContext())
+            {
+                var tmp1 = db.Images;
+                ImagesDB.ItemsSource = tmp1.ToList();
+            }
             perception = new Perceptron();
             cts = new CancellationTokenSource();
         }
@@ -58,14 +63,25 @@ namespace UserGUI
                 wpfvm.Images = wpfvm.Images.Add(item.FullName);
             }
         }
-        private void Start(object sender, RoutedEventArgs e)
+        private async void Start(object sender, RoutedEventArgs e)
         {
             DirectoryInfo directory = new DirectoryInfo(path);
-            perception.PerceptImagesAsync(directory.GetFiles(), wpfvm, cts.Token);
+            await perception.PerceptImagesAsync(directory.GetFiles(), wpfvm, cts.Token);
         }
         private void Stop(object sender, RoutedEventArgs e)
         {
             cts.Cancel();
+        }
+
+        private void DeleteEveryThing(object sender, RoutedEventArgs e)
+        {
+            using (var db = new ImageResultContext())
+            {
+                db.Results.RemoveRange(db.Results);
+                db.SaveChanges();
+                db.Images.RemoveRange(db.Images);
+                db.SaveChanges();
+            }
         }
     }
 }

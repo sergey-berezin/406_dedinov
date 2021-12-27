@@ -12,17 +12,17 @@ namespace UserGUI
     class WPFViewModel : ViewModel, INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
-        ImageResult imgRes;
+        ImmutableList<ImageResult> imgResults;
         ImmutableList<string> images;
         public WPFViewModel(int count)
         {
-            imgRes = new ImageResult(count);
+            imgResults = ImmutableList<ImageResult>.Empty;
             images = ImmutableList<string>.Empty;
         }
         public override void DisplayResult(ImageResult res, string fileName)
         {
-            ImgRes = res;
-            lock (images) 
+            ImgResults = imgResults.Add(res);
+            lock (images)
             {
                 if (images.Contains(fileName))
                 {
@@ -32,16 +32,16 @@ namespace UserGUI
                 }
             }
         }
-        public ImageResult ImgRes
+        public ImmutableList<ImageResult> ImgResults
         {
             get
             {
-                return imgRes;
+                return imgResults;
             }
             set
             {
-                imgRes = value;
-                OnPropertyChanged(nameof(ImgRes));
+                imgResults = value;
+                OnPropertyChanged(nameof(ImgResults));
             }
         }
         public ImmutableList<string> Images

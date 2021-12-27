@@ -28,7 +28,8 @@ namespace ConsoleApp
                 {
                     dirInfo = new DirectoryInfo(path);
                     break;
-                } catch
+                }
+                catch
                 {
                     Console.WriteLine("Введена некорректная директория.");
                 }

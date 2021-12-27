@@ -36,7 +36,15 @@
             </Grid>
             <Button Grid.Row="1" Content="Начать" Click="Start"/>
             <Button Grid.Row="2" Content="Остановить" Click="Stop"/>
-            <TextBlock Grid.Row="3" Text="{Binding ImgRes}"/>
+            <ListView Grid.Row="3" ItemsSource="{Binding ImgResults}"/>
+        </Grid>
+        <Grid Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1*"/>
+                <RowDefinition Height="5*"/>
+            </Grid.RowDefinitions>
+            <Button Grid.Row="0" Content="Очистить" Click="DeleteEveryThing"/>
+            <ListView x:Name="ImagesDB" Grid.Row="1"/>
         </Grid>
     </Grid>
 </Window>

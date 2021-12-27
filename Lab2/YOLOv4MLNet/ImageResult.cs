@@ -7,24 +7,26 @@ namespace Component
 {
     public class ImageResult
     {
-        int curCount = 0;
-        double imageCount;
         Dictionary<string, int> counts;
-        public ImageResult(double imageCount)
+        string fileName;
+        List<float[]> rectangles;
+        public ImageResult(string name, IReadOnlyList<YoloV4Result> res)
         {
-            this.imageCount = imageCount;
             this.counts = new Dictionary<string, int>();
+            rectangles = new List<float[]>();
+            fileName = name;
+            this.Add(res);
         }
         public override string ToString()
         {
-            string str = ((double)curCount / imageCount).ToString() + "\n";
+            string str = fileName + ":\n";
             foreach (var item in counts)
             {
                 str += item.Key + ": " + item.Value.ToString() + "\n";
             }
             return str;
         }
-        public void Add(IReadOnlyList<YoloV4Result> res)
+        private void Add(IReadOnlyList<YoloV4Result> res)
         {
             foreach (var item in res)
             {
@@ -36,8 +38,8 @@ namespace Component
                 {
                     counts.Add(item.Label, 1);
                 }
+                rectangles.Add(item.BBox);
             }
-            ++curCount;
         }
     }
 }

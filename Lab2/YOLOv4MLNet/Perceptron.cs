@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using YOLOv4MLNet.DataStructures;
@@ -52,11 +54,11 @@ namespace Component
         public async Task<List<ImageResult>> PerceptImagesAsync(FileInfo[] files, ViewModel vm, CancellationToken token)
         {
             List<ImageResult> res = new List<ImageResult>();
-            ImageResult r = new ImageResult(files.Length);
             return await Task.Factory.StartNew(() =>
             {
                 Parallel.ForEach(files, (file) =>
                 {
+                    IReadOnlyList<YoloV4Result> results;
                     if (token.IsCancellationRequested)
                     {
                         return;
@@ -70,11 +72,41 @@ namespace Component
                                 return;
                             }
                             var predict = predictionEngine.Predict(new YoloV4BitmapData() { Image = bitmap });
-                            var results = predict.GetResults(classesNames, 0.3f, 0.7f);
-                            r.Add(results);
+                            results = predict.GetResults(classesNames, 0.3f, 0.7f);
+                            ImageResult r = new ImageResult(file.FullName, results);
                             Draw(file.FullName, results);
                             vm.DisplayResult(r, file.FullName);
                             res.Add(r);
+                        }
+                        ImageResultDB imgResDB = new ImageResultDB();
+                        Image image = Image.FromFile(file.FullName);
+                        System.IO.MemoryStream memoryStream = new System.IO.MemoryStream();
+                        image.Save(memoryStream, System.Drawing.Imaging.ImageFormat.Jpeg);
+                        imgResDB.pic = memoryStream.ToArray();
+                        imgResDB.path = file.FullName;
+                        imgResDB.hashCode = GetHashFromBytes(imgResDB.pic);
+                        List<ObjectsData> tmp = new List<ObjectsData>();
+                        foreach (var item in results)
+                        {
+                            ObjectsData objD = new ObjectsData(item.Label, item.BBox[0], item.BBox[1], item.BBox[2], item.BBox[3]);
+                            tmp.Add(objD);
+                        }
+                        imgResDB.descs = tmp;
+                        using (var db = new ImageResultContext())
+                        {
+                            var q = db.Images;
+                            foreach (var item in q)
+                            {
+                                if (item.hashCode == imgResDB.hashCode)
+                                {
+                                    if (item.pic.SequenceEqual(imgResDB.pic))
+                                    {
+                                        return;
+                                    }
+                                }
+                            }
+                            db.Images.Add(imgResDB);
+                            db.SaveChanges();
                         }
                     }
                 });
@@ -106,6 +138,16 @@ namespace Component
                     }
                     bitmap.Save(path + "Done.jpg");
                 }
+            }
+        }
+        private static int GetHashFromBytes(byte[] bytes)
+        {
+            unchecked
+            {
+                var result = 0;
+                foreach (byte b in bytes)
+                    result = (result * 31) ^ b;
+                return result;
             }
         }
     }
